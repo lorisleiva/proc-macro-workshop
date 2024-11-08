@@ -49,6 +49,8 @@ pub fn derive(input: TokenStream) -> TokenStream {
     let field_methods = fields.iter().map(|field| {
         let name = &field.ident;
         let ty = &field.ty;
+
+        // For options, wrap the inner type in Some.
         if let Some(inner_ty) = get_option_inner_type(ty) {
             return quote! {
                 pub fn #name(&mut self, #name: #inner_ty) -> &mut Self {
@@ -57,15 +59,35 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 }
             };
         }
-        if is_vec(ty) {
+
+        // For vecs, add a method to override the whole vec and a method to push values to it.
+        if let Some(inner_ty) = get_vec_inner_type(ty) {
+            let foo = field
+                .attrs
+                .iter()
+                .filter_map(get_builder_attribute_tokens)
+                .next();
+            eprintln!("{:#?}", foo); // Debug print the AST.
+            let each_function = if foo.is_some() {
+                Some(quote! {
+                    pub fn #name(&mut self, #name: #inner_ty) -> &mut Self {
+                        self.#name.push(#name);
+                        self
+                    }
+                })
+            } else {
+                None
+            };
             return quote! {
                 pub fn #name(&mut self, #name: #ty) -> &mut Self {
                     self.#name = #name;
                     self
                 }
-                // TODO: Add each methods.
+                #each_function
             };
         }
+
+        // For other types, set the field by wrapping it in Some.
         quote! {
             pub fn #name(&mut self, #name: #ty) -> &mut Self {
                 self.#name = Some(#name);
@@ -83,9 +105,6 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
         quote! { #name: self.#name.clone().ok_or(concat!(stringify!(#name), " is not set"))?, }
     });
-
-    // Access the "builder" attributes of the "Builder" derive.
-    // eprintln!("{:#?}", input); // Debug print the AST.
 
     // Render the macro output.
     quote! {
@@ -122,16 +141,16 @@ fn unwrap_inner_type<'a>(ty: &'a syn::Type, ident: &'a str) -> Option<&'a syn::T
     };
 
     // Only match single-segment paths whose ident is expected.
-    let segments = &path.segments;
-    if segments.len() != 1 || segments[0].ident != ident {
+    if !is_single_path(path, ident) {
         return None;
     };
+    let segment = &path.segments[0];
 
     // Get the generic arguments of the segment.
     let syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
         args: generic_args,
         ..
-    }) = &segments[0].arguments
+    }) = &segment.arguments
     else {
         return None;
     };
@@ -170,4 +189,27 @@ fn get_vec_inner_type(ty: &syn::Type) -> Option<&syn::Type> {
 fn is_vec(ty: &syn::Type) -> bool {
     let result = get_vec_inner_type(&ty);
     result.is_some()
+}
+
+fn get_builder_attribute_tokens(attr: &syn::Attribute) -> Option<TokenStream> {
+    // Ensure we have a meta list.
+    let syn::Meta::List(syn::MetaList { path, .. }) = &attr.meta else {
+        return None;
+    };
+
+    // Ensure the path is "builder".
+    if !is_single_path(path, "builder") {
+        return None;
+    };
+
+    // Ensure the meta list has tokens.
+    let syn::Meta::List(syn::MetaList { tokens, .. }) = &attr.meta else {
+        return None;
+    };
+
+    Some(tokens.clone().into())
+}
+
+fn is_single_path(path: &syn::Path, ident: &str) -> bool {
+    path.segments.len() == 1 && path.segments[0].ident == ident
 }
