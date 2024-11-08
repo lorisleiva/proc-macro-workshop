@@ -102,23 +102,38 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
 // Identify the inner type of an Option.
 fn get_option_inner_type(ty: &syn::Type) -> Option<&syn::Type> {
-    if let syn::Type::Path(syn::TypePath { path, .. }) = ty {
-        let segments = &path.segments;
-        if segments.len() == 1 && segments[0].ident == "Option" {
-            if let syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
-                args,
-                ..
-            }) = &segments[0].arguments
-            {
-                if args.len() == 1 {
-                    if let syn::GenericArgument::Type(ty) = args.first().unwrap() {
-                        return Some(ty);
-                    }
-                }
-            }
-        }
-    }
-    None
+    // Get the path of the type. — e.g. `a::b::c::Option`.
+    let syn::Type::Path(syn::TypePath { path, .. }) = ty else {
+        return None;
+    };
+
+    // Only match single-segment paths whose ident is "Option".
+    let segments = &path.segments;
+    if segments.len() != 1 || segments[0].ident != "Option" {
+        return None;
+    };
+
+    // Get the generic arguments of the Option segment.
+    let syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+        args: generic_args,
+        ..
+    }) = &segments[0].arguments
+    else {
+        return None;
+    };
+
+    // Only match Options with a single generic argument.
+    if generic_args.len() != 1 {
+        return None;
+    };
+
+    // Ensure the generic argument is a type.
+    let syn::GenericArgument::Type(ty) = generic_args.first().unwrap() else {
+        return None;
+    };
+
+    // Return the inner type of the Option.
+    Some(ty)
 }
 
 // Check if a type is an Option.
