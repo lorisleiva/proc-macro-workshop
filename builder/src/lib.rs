@@ -1,4 +1,5 @@
 use proc_macro::TokenStream;
+use proc_macro2::TokenTree;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
@@ -218,16 +219,16 @@ fn get_each_from_builder_attribute(attr: &syn::Attribute) -> Option<syn::Ident> 
     // Check all tokens in the token tree.
     let mut tokens = tokens.clone().into_iter();
     match tokens.next() {
-        Some(proc_macro2::TokenTree::Ident(ident)) if ident == "each" => {}
+        Some(TokenTree::Ident(ident)) if ident == "each" => {}
         _ => return None,
     }
     match tokens.next() {
-        Some(proc_macro2::TokenTree::Punct(punct)) if punct.as_char() == '=' => {}
+        Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => {}
         _ => return None,
     }
 
     // Get the literal string from the third token.
-    let Some(proc_macro2::TokenTree::Literal(literal)) = tokens.next() else {
+    let Some(TokenTree::Literal(literal)) = tokens.next() else {
         return None;
     };
     let syn::Lit::Str(string_literal) = syn::Lit::new(literal) else {
