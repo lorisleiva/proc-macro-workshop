@@ -1,12 +1,12 @@
 # Rust Latam: procedural macros workshop
 
-*This repo contains a selection of projects designed to learn to write Rust
-procedural macros &mdash; Rust code that generates Rust code.*
+_This repo contains a selection of projects designed to learn to write Rust
+procedural macros &mdash; Rust code that generates Rust code._
 
-*Each of these projects is drawn closely from a compelling real use case. Out of
+_Each of these projects is drawn closely from a compelling real use case. Out of
 the 5 projects here, 3 are macros that I have personally implemented in
 industrial codebases for work, and the other 2 exist as libraries on crates.io
-by other authors.*
+by other authors._
 
 <br>
 
@@ -95,7 +95,7 @@ This project covers:
 - constructing output source code;
 - processing helper attributes to customize the generated code.
 
-*Project skeleton is located under the <kbd>builder</kbd> directory.*
+_Project skeleton is located under the <kbd>builder</kbd> directory._
 
 ### Derive macro: `derive(CustomDebug)`
 
@@ -136,7 +136,7 @@ This project covers:
 - inferring trait bounds on generic parameters of trait impls;
 - limitations of derive's ability to emit universally correct trait bounds.
 
-*Project skeleton is located under the <kbd>debug</kbd> directory.*
+_Project skeleton is located under the <kbd>debug</kbd> directory._
 
 ### Function-like macro: `seq!`
 
@@ -175,7 +175,7 @@ This project covers:
 - low-level representation of token streams;
 - constructing output source code.
 
-*Project skeleton is located under the <kbd>seq</kbd> directory.*
+_Project skeleton is located under the <kbd>seq</kbd> directory._
 
 ### Attribute macro: `#[sorted]`
 
@@ -207,7 +207,7 @@ This project covers:
 - limitations of the currently stable macro API and some ways to work around
   them.
 
-*Project skeleton is located under the <kbd>sorted</kbd> directory.*
+_Project skeleton is located under the <kbd>sorted</kbd> directory._
 
 ### Attribute macro: `#[bitfield]`
 
@@ -291,7 +291,7 @@ This project covers:
   leveraging the trait system in interesting ways from generated code;
 - tricky code.
 
-*Project skeleton is located under the <kbd>bitfield</kbd> directory.*
+_Project skeleton is located under the <kbd>bitfield</kbd> directory._
 
 ### Project recommendations
 
@@ -367,8 +367,8 @@ Run `cargo test` inside any of the 5 top-level project directories to run the
 test suite for that project.
 
 Initially every projects starts with all of its tests disabled. Open up the
-project's *tests/progress.rs* file and enable tests one at a time as you work
-through the implementation. **The test files (for example *tests/01-parse.rs*)
+project's _tests/progress.rs_ file and enable tests one at a time as you work
+through the implementation. **The test files (for example _tests/01-parse.rs_)
 each contain a comment explaining what functionality is tested and giving some
 tips for how to implement it.** I recommend working through tests in numbered
 order, each time enabling one more test and getting it passing before moving on.
@@ -391,7 +391,7 @@ considered to pass. If they do not match, the test runner will surface the
 expected and actual output.
 
 Expected output goes in a file with the same name as the test except with an
-extension of _*.stderr_ instead of _*.rs_.
+extension of _\*.stderr_ instead of _\*.rs_.
 
 <p align="center">
 <a href="#workflow">
@@ -399,12 +399,12 @@ extension of _*.stderr_ instead of _*.rs_.
 </a>
 </p>
 
-If there is no _*.stderr_ file for a test that is supposed to fail to compile,
+If there is no _\*.stderr_ file for a test that is supposed to fail to compile,
 the test runner will save the compiler's output into a directory called
 <kbd>wip</kbd> adjacent to the <kbd>tests</kbd> directory. So the way to update
-the "expected" output is to delete the existing _*.stderr_ file, run the tests
-again so that the output is written to *wip*, and then move the new output from
-*wip* to *tests*.
+the "expected" output is to delete the existing _\*.stderr_ file, run the tests
+again so that the output is written to _wip_, and then move the new output from
+_wip_ to _tests_.
 
 <p align="center">
 <a href="#workflow">
