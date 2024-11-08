@@ -43,7 +43,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         if is_vec(ty) {
             return quote! { #name: Vec::new(), };
         }
-        quote! { #name: None, }
+        quote! { #name: std::option::Option::None, }
     });
 
     // Get the methods for setting the fields on the builder struct.
@@ -55,7 +55,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         if let Some(inner_ty) = get_option_inner_type(ty) {
             return quote! {
                 pub fn #name(&mut self, #name: #inner_ty) -> &mut Self {
-                    self.#name = Some(#name);
+                    self.#name = std::option::Option::Some(#name);
                     self
                 }
             };
@@ -79,7 +79,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         // For other types, set the field by wrapping it in Some.
         quote! {
             pub fn #name(&mut self, #name: #ty) -> &mut Self {
-                self.#name = Some(#name);
+                self.#name = std::option::Option::Some(#name);
                 self
             }
         }
@@ -104,7 +104,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         impl #builder_name {
             #(#field_methods)*
 
-            pub fn build(&self) -> Result<#name, Box<dyn std::error::Error>> {
+            pub fn build(&self) -> std::result::Result<#name, std::boxed::Box<dyn std::error::Error>> {
                 Ok(#name {
                     #(#built_fields)*
                 })
