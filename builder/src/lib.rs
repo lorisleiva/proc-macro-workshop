@@ -62,27 +62,35 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
         // For vecs, add a method to override the whole vec and a method to push values to it.
         if let Some(inner_ty) = get_vec_inner_type(ty) {
-            let foo = field
+            let each_name_option = field
                 .attrs
                 .iter()
-                .filter_map(get_builder_attribute_tokens)
+                .filter_map(get_each_from_builder_attribute)
                 .next();
-            eprintln!("{:#?}", foo); // Debug print the AST.
-            let each_function = if foo.is_some() {
-                Some(quote! {
-                    pub fn #name(&mut self, #name: #inner_ty) -> &mut Self {
-                        self.#name.push(#name);
-                        self
-                    }
-                })
-            } else {
-                None
-            };
-            return quote! {
+            let all_function = quote! {
                 pub fn #name(&mut self, #name: #ty) -> &mut Self {
                     self.#name = #name;
                     self
                 }
+            };
+            let (each_function, all_function) = if let Some(ref each_name) = each_name_option {
+                let each_function = quote! {
+                    pub fn #each_name(&mut self, #each_name: #inner_ty) -> &mut Self {
+                        self.#name.push(#each_name);
+                        self
+                    }
+                };
+                if each_name == name.as_ref().unwrap() {
+                    (Some(each_function), None)
+                } else {
+                    (Some(each_function), Some(all_function))
+                }
+            } else {
+                (None, Some(all_function))
+            };
+
+            return quote! {
+                #all_function
                 #each_function
             };
         }
@@ -191,7 +199,7 @@ fn is_vec(ty: &syn::Type) -> bool {
     result.is_some()
 }
 
-fn get_builder_attribute_tokens(attr: &syn::Attribute) -> Option<TokenStream> {
+fn get_each_from_builder_attribute(attr: &syn::Attribute) -> Option<syn::Ident> {
     // Ensure we have a meta list.
     let syn::Meta::List(syn::MetaList { path, .. }) = &attr.meta else {
         return None;
@@ -207,7 +215,30 @@ fn get_builder_attribute_tokens(attr: &syn::Attribute) -> Option<TokenStream> {
         return None;
     };
 
-    Some(tokens.clone().into())
+    // Check all tokens in the token tree.
+    let mut tokens = tokens.clone().into_iter();
+    match tokens.next() {
+        Some(proc_macro2::TokenTree::Ident(ident)) if ident == "each" => {}
+        _ => return None,
+    }
+    match tokens.next() {
+        Some(proc_macro2::TokenTree::Punct(punct)) if punct.as_char() == '=' => {}
+        _ => return None,
+    }
+
+    // Get the literal string from the third token.
+    let Some(proc_macro2::TokenTree::Literal(literal)) = tokens.next() else {
+        return None;
+    };
+    let syn::Lit::Str(string_literal) = syn::Lit::new(literal) else {
+        return None;
+    };
+
+    // Convert to an ident.
+    Some(syn::Ident::new(
+        &string_literal.value(),
+        string_literal.span(),
+    ))
 }
 
 fn is_single_path(path: &syn::Path, ident: &str) -> bool {
